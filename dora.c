@@ -40,21 +40,11 @@ void parse_args(int argc, char **argv, cycles *pcycles,
     };
 };
 
-void listener_loop() {
+void listener_loop(struct sockaddr_un *local) {
 
     // Set up cycles/socket for run
-    struct sockaddr_un local, remote;
-    // memset(&local, 0, sizeof(local));
-    // memset(&remote, 0, sizeof(remote));
-
-    local.sun_family = AF_UNIX;
+    struct sockaddr_un remote;
     remote.sun_family = AF_UNIX;
-
-    strncpy(local.sun_path, SOCK_PATH, sizeof(local.sun_path) - 1);
-
-    cycles active_cycles = {WORK_LEN, BREAK_LEN};
-
-    // parse_args(argc, argv, &active_cycles, &local);
 
     // Open socket
     int sock;
@@ -67,19 +57,19 @@ void listener_loop() {
     printf("Opened socket\n");
 
     // Bind
-    if (unlink(local.sun_path) == -1) {
+    if (unlink(local->sun_path) == -1) {
         if (errno != 2) {
-            printf("Error in unlinking %s: %d\n", local.sun_path, errno);
+            printf("Error in unlinking %s: %d\n", local->sun_path, errno);
             exit(1);
         };
     };
 
-    if (bind(sock, (const struct sockaddr *)&local, sizeof(local)) == -1) {
+    if (bind(sock, (const struct sockaddr *)local, sizeof(*local)) == -1) {
         printf("Error in socket binding: %d\n", errno);
         exit(1);
     };
 
-    printf("Bound socket to %s\n", local.sun_path);
+    printf("Bound socket to %s\n", local->sun_path);
 
     // Listen
     listen(sock, 5);
@@ -100,7 +90,7 @@ void listener_loop() {
             // Respond
             response resp;
             resp.exit = 0;
-            strncpy(resp.resp, "ligma" ,LEN_RESPONSE - 1);
+            strncpy(resp.resp, "ligma", LEN_RESPONSE - 1);
             send(sock_connected, &resp, sizeof(resp) - 1, 0);
         };
     };
@@ -108,7 +98,17 @@ void listener_loop() {
 
 int main(int argc, char **argv) {
 
-    listener_loop();
+    // Initialise socket address and cycles
+    struct sockaddr_un local;
+    local.sun_family = AF_UNIX;
+    strncpy(local.sun_path, SOCK_PATH, sizeof(local.sun_path) - 1);
+
+    cycles active_cycles = {WORK_LEN, BREAK_LEN};
+
+    // Parse args
+    parse_args(argc, argv, &active_cycles, &local);
+
+    listener_loop(&local);
 
     // Initialise state
     long cur_time;
@@ -122,9 +122,8 @@ int main(int argc, char **argv) {
         return 1;
     };
 
-    state state = {RUNNING, WORKING, seconds, time(NULL) + seconds};
 
-    // From Arch wiki
+    state state = {RUNNING, WORKING, seconds, time(NULL) + seconds};
 
     notify("DONE", "bottom text");
 
