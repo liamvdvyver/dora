@@ -3,7 +3,8 @@
     "arguments": [
       "/usr/bin/clang",
       "-c",
-      "-pthread",
+      "-g",
+      "-O0",
       "-I/usr/include/gdk-pixbuf-2.0",
       "-I/usr/include/glib-2.0",
       "-I/usr/lib/glib-2.0/include",
@@ -22,12 +23,14 @@
   },
   {
     "arguments": [
-      "/usr/bin/clang-16",
+      "/usr/bin/clang-17",
       "-cc1",
       "-triple",
       "x86_64-pc-linux-gnu",
       "-emit-obj",
       "-mrelax-all",
+      "-dumpdir",
+      "dora-",
       "-disable-free",
       "-clear-ast-before-backend",
       "-disable-llvm-verifier",
@@ -48,12 +51,12 @@
       "x86-64",
       "-tune-cpu",
       "generic",
-      "-mllvm",
-      "-treat-scalable-fixed-error-as-warning",
+      "-debug-info-kind=constructor",
+      "-dwarf-version=5",
       "-debugger-tuning=gdb",
       "-fcoverage-compilation-dir=/home/lvdv/git/dora",
       "-resource-dir",
-      "/usr/lib/clang/16",
+      "/usr/lib/clang/17",
       "-I",
       "/usr/include/gdk-pixbuf-2.0",
       "-I",
@@ -69,7 +72,7 @@
       "-I",
       "/usr/include/sysprof-6",
       "-internal-isystem",
-      "/usr/lib/clang/16/include",
+      "/usr/lib/clang/17/include",
       "-internal-isystem",
       "/usr/local/include",
       "-internal-isystem",
@@ -78,6 +81,7 @@
       "/include",
       "-internal-externc-isystem",
       "/usr/include",
+      "-O0",
       "-fdebug-compilation-dir=/home/lvdv/git/dora",
       "-ferror-limit",
       "19",
@@ -91,11 +95,11 @@
       "-x",
       "c",
       "-o",
-      "/tmp/dora-92c081.o",
+      "/tmp/dora-5e5c22.o",
       "dora.c"
     ],
     "directory": "/home/lvdv/git/dora",
     "file": "/home/lvdv/git/dora/dora.c",
-    "output": "/tmp/dora-92c081.o"
+    "output": "/tmp/dora-5e5c22.o"
   }
 ]
