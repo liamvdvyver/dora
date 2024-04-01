@@ -15,8 +15,8 @@
 #include "strategies.h"
 
 // Usage
-const char *USAGE =
-    "Usage: dora [-w work length (min) | -b break length (min) | -s socket path]";
+const char *USAGE = "Usage: dora [-w work length (min) | -b break length (min) "
+                    "| -s socket path]";
 
 // Default cycles
 const long WORK_LEN = 25 * 60;

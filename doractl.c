@@ -59,7 +59,6 @@ int main(int argc, char **argv) {
     remote.sun_family = AF_UNIX;
     strncpy(remote.sun_path, SOCK_PATH, sizeof(remote.sun_path) - 1);
 
-
     // Populate with input
     char opt;
     while ((opt = (getopt(argc, argv, "s:q:c:t:h"))) != -1) {

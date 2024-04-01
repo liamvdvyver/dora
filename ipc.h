@@ -24,7 +24,19 @@ typedef struct state {
 } state;
 
 enum field { NO_FIELD, STATUS, REMAINING, FINISH, PHASE };
-enum control { NO_CONTROL, PAUSE, RUN, TOGGLE, STOP, RESTART, NEXT, WORK, BRK, SET_WORK_LEN, SET_BRK_LEN };
+enum control {
+    NO_CONTROL,
+    PAUSE,
+    RUN,
+    TOGGLE,
+    STOP,
+    RESTART,
+    NEXT,
+    WORK,
+    BRK,
+    SET_WORK_LEN,
+    SET_BRK_LEN
+};
 
 typedef struct request {
     enum control control;
