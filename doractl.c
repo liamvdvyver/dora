@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -5,12 +6,17 @@
 #include <unistd.h>
 
 #include "ipc.h"
+#include "printing.h"
 
 const int PATH_LEN = 99;
 const int OUTPUT_LEN = 99;
 
-// TODO: Usage info
-const char *USAGE = "TODO: usage";
+const char *USAGE = "Usage: doractl [-q query | -c control (-t minutes) | -h]";
+const char *QUERY_USAGE =
+    "Usage: doractl -q [status | phase | remaining | finish]";
+const char *CONTROL_USAGE =
+    "Usage: doractl -c [pause | run | stop | restart | next | work | break | "
+    "worklen (-t minutes) | breaklen (-t minutes)]";
 
 // Print response
 void get_output(state *p_state, enum field query, char *buf, int n) {
@@ -20,22 +26,27 @@ void get_output(state *p_state, enum field query, char *buf, int n) {
         *buf = '\0';
         break;
     case REMAINING:
-        snprintf(buf, (unsigned long)n, "%ld\n", p_state->remaining);
+        snprintf(buf, n - 1, "%ld", p_state->remaining);
         break;
     case FINISH:
-        snprintf(buf, n, "%ld\n", p_state->finish);
+        snprintf(buf, n - 1, "%ld", p_state->finish);
         break;
-    // TODO: pretty print
     case STATUS:
-        snprintf(buf, n, "%d\n", p_state->status);
+        print_status(buf, n - 1, p_state->status);
         break;
     case PHASE:
-        snprintf(buf, n, "%d\n", p_state->phase);
+        print_phase(buf, n - 1, p_state->phase);
         break;
     };
 };
 
 int main(int argc, char **argv) {
+
+    // Bad usage
+    if (argc == 1) {
+        fprintf(stderr, "%s\n", USAGE);
+        exit(1);
+    };
 
     // Initialise request
     request req = INIT_REQUEST;
@@ -45,13 +56,14 @@ int main(int argc, char **argv) {
 
     // Populate with input
     char opt;
-    while ((opt = (getopt(argc, argv, "q:c:w:b:h"))) != -1) {
+    while ((opt = (getopt(argc, argv, "q:c:t:h"))) != -1) {
         switch (opt) {
 
             // Get usage
         case 'h':
             printf("%s\n", USAGE);
             exit(0);
+            break;
 
         // Query state
         case 'q':
@@ -64,9 +76,12 @@ int main(int argc, char **argv) {
             } else if (strcmp(optarg, "finish") == 0) {
                 query = FINISH;
             } else {
-                printf("Bad query\n");
+                errno = EINVAL;
+                perror("-q");
+                printf("%s\n", QUERY_USAGE);
                 exit(1);
             };
+            break;
 
         // Control state
         case 'c':
@@ -86,16 +101,30 @@ int main(int argc, char **argv) {
                 req.control = WORK;
             } else if (strcmp(optarg, "break") == 0) {
                 req.control = BRK;
+            } else if (strcmp(optarg, "worklen") == 0) {
+                req.control = SET_WORK_LEN;
+            } else if (strcmp(optarg, "breaklen") == 0) {
+                req.control = SET_BRK_LEN;
+            } else {
+                errno = EINVAL;
+                perror("-c");
+                printf("%s\n", CONTROL_USAGE);
+                exit(1);
             };
+            break;
 
-        // TODO: Adjust work cycle length
-        case 'w':
-            continue;
-
-        // Adjust break cycle length
-        case 'b':
-            continue;
+        case 't':
+            // TODO: safety
+            req.minutes = atol(optarg);
+            break;
         };
+    };
+
+    // Check minutes provided if needed
+    if (req.minutes == 0 &&
+        (req.control == SET_WORK_LEN || req.control == SET_BRK_LEN)) {
+        fprintf(stderr, "Positive argument to -t required\n");
+        exit(1);
     };
 
     struct sockaddr_un remote;
@@ -128,7 +157,7 @@ int main(int argc, char **argv) {
     // Format query
     char output[OUTPUT_LEN];
     get_output(&resp.state, query, output, OUTPUT_LEN - 1);
-    printf("%s", output);
+    printf("%s\n", output);
 
     exit(resp.exit);
 };

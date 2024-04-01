@@ -12,6 +12,7 @@
 
 #include "ipc.h"
 #include "strategies.h"
+#include "printing.h"
 
 // Default cycles
 const long WORK_LEN = 25 * 60;
@@ -36,31 +37,6 @@ void notify_libnotify(char *heading, char *body) {
 
 const int HEADING_LEN = 99;
 const int BODY_LEN = 99;
-
-void print_status(char *buf, int n, enum status status) {
-    switch (status) {
-    case RUNNING:
-        strncpy(buf, "running", n);
-        break;
-    case PAUSED:
-        strncpy(buf, "paused", n);
-        break;
-    case STOPPED:
-        strncpy(buf, "stopped", n);
-        break;
-    };
-};
-
-void print_phase(char *buf, int n, enum phase phase) {
-    switch (phase) {
-    case WORKING:
-        strncpy(buf, "working", n);
-        break;
-    case BREAKING:
-        strncpy(buf, "breaking", n);
-        break;
-    };
-};
 
 void get_notification(state *p_state, char *heading, char *body) {
     // Set heading

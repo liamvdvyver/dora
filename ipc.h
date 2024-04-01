@@ -24,14 +24,14 @@ typedef struct state {
 } state;
 
 enum field { NO_FIELD, STATUS, REMAINING, FINISH, PHASE };
-enum control { NO_CONTROL, PAUSE, RUN, TOGGLE, STOP, RESTART, NEXT, WORK, BRK };
+enum control { NO_CONTROL, PAUSE, RUN, TOGGLE, STOP, RESTART, NEXT, WORK, BRK, SET_WORK_LEN, SET_BRK_LEN };
 
 typedef struct request {
-    struct cycles cycles;
     enum control control;
+    long minutes;
 } request;
 
-const request INIT_REQUEST = {.cycles = {0, 0}, .control = NO_CONTROL};
+const request INIT_REQUEST = {.control = NO_CONTROL, .minutes = 0};
 
 const int LEN_RESPONSE = 99;
 

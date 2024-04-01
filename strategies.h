@@ -114,6 +114,11 @@ void handle_control(state *p_state, pthread_mutex_t *p_mutex,
             break;
         case BRK:
             strategy_brk(p_state, p_mutex, p_sem);
+            break;
+        case SET_BRK_LEN:
+            break;
+        case SET_WORK_LEN:
+            break;
         };
         sem_post(p_sem);
     };
