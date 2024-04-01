@@ -17,14 +17,12 @@ const long BREAK_LEN = 5 * 60;
 
 // Default state
 state init_state(cycles *cycles) {
-    struct state ret = {.status = RUNNING,
-                        .phase = WORKING,
-                        .remaining = WORK_LEN,
-                        .finish = time(NULL) + BREAK_LEN,
-                        .work_len = WORK_LEN,
-                        .break_len = BREAK_LEN};
+    struct state ret = {.work_len = WORK_LEN, .break_len = BREAK_LEN};
     return ret;
 };
+
+// Timer tick period
+const int TIMER_TICK = 1;
 
 void notify(char *heading, char *body) {
     notify_init("Dora");
@@ -100,7 +98,7 @@ void *listener_loop(void *args) {
 
     printf("Listening\n");
 
-    while (1) {
+    while (p_state->status != STOPPED) {
 
         // Accept request
         socklen_t len = sizeof(remote);
@@ -121,6 +119,35 @@ void *listener_loop(void *args) {
             send(sock_connected, &resp, sizeof(resp) - 1, 0);
         };
     };
+
+    pthread_exit(NULL);
+};
+
+// Run on a loop
+void *timer_loop(void *args) {
+
+    state *p_state = ((struct listener_args_struct *)args)->p_state;
+    pthread_mutex_t *p_state_mutex =
+        ((struct listener_args_struct *)args)->p_mutex;
+
+    while (p_state->status != STOPPED) {
+
+        time_t cur_time = time(NULL);
+        if (cur_time < p_state->finish) {
+
+            // Do nothing
+            sleep(TIMER_TICK);
+            strategy_tick(p_state, p_state_mutex);
+
+        } else {
+
+            // Start next phase
+            printf("switching\n");
+            strategy_next(p_state, p_state_mutex);
+        };
+    };
+
+    pthread_exit(0);
 };
 
 int main(int argc, char **argv) {
@@ -135,11 +162,12 @@ int main(int argc, char **argv) {
     // Parse args
     parse_args(argc, argv, &active_cycles, &local);
 
-    // Initialise state
-    state active_state = init_state(&active_cycles);
-
     // Launch listener thread
     pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+    // Initialise state
+    state active_state = init_state(&active_cycles);
+    strategy_work(&active_state, &state_mutex);
 
     struct listener_args_struct args;
     args.p_sockaddr = &local;
@@ -148,6 +176,9 @@ int main(int argc, char **argv) {
 
     pthread_t listener_t;
     pthread_create(&listener_t, NULL, &listener_loop, &args);
+
+    pthread_t timer_t;
+    pthread_create(&timer_t, NULL, &timer_loop, &args);
 
     pthread_join(listener_t, NULL);
 

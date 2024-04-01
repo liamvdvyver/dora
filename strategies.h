@@ -4,6 +4,14 @@
 
 #include "ipc.h"
 
+void strategy_tick(state *p_state, pthread_mutex_t *p_mutex) {
+    if (p_state->status == RUNNING) {
+        pthread_mutex_lock(p_mutex);
+        p_state->remaining = p_state->finish - time(NULL);
+        pthread_mutex_unlock(p_mutex);
+    };
+};
+
 void strategy_pause(state *p_state, pthread_mutex_t *p_mutex) {
     pthread_mutex_lock(p_mutex);
     p_state->status = PAUSED;
