@@ -1,3 +1,8 @@
+// Standard definiitons for IPC
+
+#ifndef _ipc_h_included
+#define _ipc_h_included
+
 const char *SOCK_PATH = "/tmp/dora.socket";
 
 typedef struct cycles {
@@ -5,18 +10,20 @@ typedef struct cycles {
     long breakLen;
 } cycles;
 
-enum status { RUNNING = 1, PAUSED = 2 };
-enum phase { WORKING = 1, BREAKING = 2 };
+enum status { RUNNING, PAUSED, STOPPED };
+enum phase { WORKING, BREAKING };
 
 typedef struct state {
     enum status status;
     enum phase phase;
     long remaining;
     long finish;
+    long work_len;
+    long break_len;
 
 } state;
 
-enum field { NO_FIELD, STATUS, REMAINING, FINISH };
+enum field { NO_FIELD, STATUS, REMAINING, FINISH, PHASE };
 enum control { NO_CONTROL, PAUSE, RUN, TOGGLE, STOP, RESTART, NEXT, WORK, BRK };
 
 typedef struct request {
@@ -32,3 +39,5 @@ typedef struct response {
     int exit;
     state state;
 } response;
+
+#endif

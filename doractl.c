@@ -29,6 +29,9 @@ void get_output(state *p_state, enum field query, char *buf, int n) {
     case STATUS:
         snprintf(buf, n, "%d\n", p_state->status);
         break;
+    case PHASE:
+        snprintf(buf, n, "%d\n", p_state->phase);
+        break;
     };
 };
 
@@ -54,6 +57,8 @@ int main(int argc, char **argv) {
         case 'q':
             if (strcmp(optarg, "status") == 0) {
                 query = STATUS;
+            } else if (strcmp(optarg, "phase") == 0) {
+                query = PHASE;
             } else if (strcmp(optarg, "remaining") == 0) {
                 query = REMAINING;
             } else if (strcmp(optarg, "finish") == 0) {

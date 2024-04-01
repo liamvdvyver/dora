@@ -9,16 +9,20 @@
 #include <unistd.h>
 
 #include "ipc.h"
+#include "strategies.h"
 
 // Default cycles
 const long WORK_LEN = 25 * 60;
 const long BREAK_LEN = 5 * 60;
-const cycles CYCLES = {WORK_LEN, BREAK_LEN};
 
 // Default state
 state init_state(cycles *cycles) {
-    struct state ret = {RUNNING, WORKING, cycles->workLen,
-                        time(NULL) + cycles->workLen};
+    struct state ret = {.status = RUNNING,
+                        .phase = WORKING,
+                        .remaining = WORK_LEN,
+                        .finish = time(NULL) + BREAK_LEN,
+                        .work_len = WORK_LEN,
+                        .break_len = BREAK_LEN};
     return ret;
 };
 
@@ -59,7 +63,8 @@ void *listener_loop(void *args) {
     struct sockaddr_un *local;
     local = ((struct listener_args_struct *)args)->p_sockaddr;
     state *p_state = ((struct listener_args_struct *)args)->p_state;
-    pthread_mutex_t *p_state_mutex = ((struct listener_args_struct *)args)->p_mutex;
+    pthread_mutex_t *p_state_mutex =
+        ((struct listener_args_struct *)args)->p_mutex;
 
     // Set up cycles/socket for run
     struct sockaddr_un remote;
@@ -106,7 +111,9 @@ void *listener_loop(void *args) {
         request req;
         while (len = recv(sock_connected, &req, sizeof(req), 0), len > 0) {
 
-            // Handle controls
+            // Handle control
+            handle_control(p_state, p_state_mutex, req.control);
+
             // Respond
             response resp;
             resp.exit = 0;
@@ -136,7 +143,7 @@ int main(int argc, char **argv) {
 
     struct listener_args_struct args;
     args.p_sockaddr = &local;
-    args.p_state= &active_state;
+    args.p_state = &active_state;
     args.p_mutex = &state_mutex;
 
     pthread_t listener_t;
