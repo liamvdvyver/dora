@@ -114,6 +114,7 @@ void *listener_loop(void *args) {
 
             // Respond
             response resp;
+            memset(&resp, 0, sizeof(resp));
             resp.exit = 0;
             resp.state = *p_state;
             send(sock_connected, &resp, sizeof(resp) - 1, 0);
