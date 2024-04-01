@@ -50,6 +50,7 @@ void parse_args(int argc, char **argv, cycles *pcycles,
 struct listener_args_struct {
     struct sockaddr_un *p_sockaddr;
     pthread_mutex_t *p_mutex;
+    state *p_state;
 };
 
 void *listener_loop(void *args) {
@@ -57,6 +58,7 @@ void *listener_loop(void *args) {
     // Read in data
     struct sockaddr_un *local;
     local = ((struct listener_args_struct *)args)->p_sockaddr;
+    state *p_state = ((struct listener_args_struct *)args)->p_state;
     pthread_mutex_t *p_state_mutex = ((struct listener_args_struct *)args)->p_mutex;
 
     // Set up cycles/socket for run
@@ -104,10 +106,11 @@ void *listener_loop(void *args) {
         request req;
         while (len = recv(sock_connected, &req, sizeof(req), 0), len > 0) {
 
+            // Handle controls
             // Respond
             response resp;
             resp.exit = 0;
-            strncpy(resp.resp, "ligma", LEN_RESPONSE - 1);
+            resp.state = *p_state;
             send(sock_connected, &resp, sizeof(resp) - 1, 0);
         };
     };
@@ -133,6 +136,7 @@ int main(int argc, char **argv) {
 
     struct listener_args_struct args;
     args.p_sockaddr = &local;
+    args.p_state= &active_state;
     args.p_mutex = &state_mutex;
 
     pthread_t listener_t;

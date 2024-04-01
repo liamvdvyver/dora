@@ -16,20 +16,19 @@ typedef struct state {
 
 } state;
 
-enum field { NO_FIELD, TIME, STATUS, REMAINING, FINISH };
+enum field { NO_FIELD, STATUS, REMAINING, FINISH };
 enum control { NO_CONTROL, PAUSE, RUN, TOGGLE, STOP, RESTART, NEXT, WORK, BRK };
 
 typedef struct request {
-    enum field query;
     struct cycles cycles;
     enum control control;
 } request;
 
-const request INIT_REQUEST = {.query = NO_FIELD, .cycles = {0, 0}, .control = NO_CONTROL};
+const request INIT_REQUEST = {.cycles = {0, 0}, .control = NO_CONTROL};
 
 const int LEN_RESPONSE = 99;
 
 typedef struct response {
     int exit;
-    char resp[99];
+    state state;
 } response;
