@@ -155,9 +155,11 @@ int main(int argc, char **argv) {
     };
 
     // Format query
-    char output[OUTPUT_LEN];
-    get_output(&resp.state, query, output, OUTPUT_LEN - 1);
-    printf("%s\n", output);
+    if (query != NO_FIELD) {
+        char output[OUTPUT_LEN];
+        get_output(&resp.state, query, output, OUTPUT_LEN - 1);
+        printf("%s\n", output);
+    };
 
     exit(resp.exit);
 };
