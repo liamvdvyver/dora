@@ -124,7 +124,7 @@ void *listener_loop(void *args) {
     int sock;
     errno = 0;
     if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-        printf("Error in socket creation: %d\n", errno);
+        perror("socket");
         exit(1);
     };
 
@@ -133,20 +133,23 @@ void *listener_loop(void *args) {
     // Bind
     if (unlink(local->sun_path) == -1) {
         if (errno != 2) {
-            printf("Error in unlinking %s: %d\n", local->sun_path, errno);
+            perror("unlink");
             exit(1);
         };
     };
 
     if (bind(sock, (const struct sockaddr *)local, sizeof(*local)) == -1) {
-        printf("Error in socket binding: %d\n", errno);
+        perror("bind");
         exit(1);
     };
 
     printf("Bound socket to %s\n", local->sun_path);
 
     // Listen
-    listen(sock, 5);
+    if (listen(sock, 5) == -1) {
+        perror("listen");
+        exit(1);
+    };
 
     printf("Listening\n");
 
@@ -154,8 +157,11 @@ void *listener_loop(void *args) {
 
         // Accept request
         socklen_t len = sizeof(remote);
-        unsigned int sock_connected =
-            accept(sock, (struct sockaddr *)&remote, &len);
+        int sock_connected;
+        if ((sock_connected = accept(sock, (struct sockaddr *)&remote, &len)) == -1) {
+            perror("accept");
+            exit(1);
+        };
 
         // Receive requests
         request req;
@@ -173,7 +179,7 @@ void *listener_loop(void *args) {
         };
     };
 
-    pthread_exit(NULL);
+    pthread_exit(0);
 };
 
 // Run on a loop
@@ -196,7 +202,6 @@ void *timer_loop(void *args) {
         } else {
 
             // Start next phase
-            printf("switching\n");
             strategy_next(p_state, p_state_mutex, p_notify_sem);
         };
     };
@@ -212,7 +217,12 @@ void *notifier_loop(void *args) {
     sem_t *p_notify_sem = ((struct listener_args_struct *)args)->p_sem;
 
     while (p_state->status != STOPPED) {
-        sem_wait(p_notify_sem);
+
+        if ((sem_wait(p_notify_sem)) == -1) {
+            perror("sem_wait");
+            exit(1);
+        };
+
         char heading[HEADING_LEN];
         char body[BODY_LEN];
         get_notification(p_state, heading, body);
@@ -239,7 +249,10 @@ int main(int argc, char **argv) {
 
     // Semphore to notify on phase change
     sem_t notify_sem;
-    sem_init(&notify_sem, 0, 1);
+    if ((sem_init(&notify_sem, 0, 1)) == -1) {
+        perror("sem_init");
+        exit(1);
+    };
 
     // Initialise state
     state active_state = init_state();
@@ -254,19 +267,43 @@ int main(int argc, char **argv) {
 
     // Launch threads
     pthread_t listener_t;
-    pthread_create(&listener_t, NULL, &listener_loop, &args);
+    if ((errno = pthread_create(&listener_t, NULL, &listener_loop, &args)), errno != 0) {
+        perror("pthread_create");
+        exit(1);
+    };
 
     pthread_t timer_t;
-    pthread_create(&timer_t, NULL, &timer_loop, &args);
+    if ((errno = pthread_create(&timer_t, NULL, &timer_loop, &args)), errno != 0) {
+        perror("pthread_create");
+        exit(1);
+    };
 
     pthread_t notifier_t;
-    pthread_create(&notifier_t, NULL, &notifier_loop, &args);
+    if ((errno = pthread_create(&notifier_t, NULL, &notifier_loop, &args)), errno != 0) {
+        perror("pthread_create");
+        exit(1);
+    };
 
     // Terminate
-    pthread_join(timer_t, NULL);
-    pthread_join(notifier_t, NULL);
-    pthread_join(listener_t, NULL);
-    sem_destroy(&notify_sem);
+    if ((errno = pthread_join(timer_t, NULL)), errno != 0) {
+        perror("pthread_join");
+        exit(1);
+    };
+
+    if ((errno = pthread_join(notifier_t, NULL)), errno != 0) {
+        perror("pthread_join");
+        exit(1);
+    };
+
+    if ((errno = pthread_join(listener_t, NULL)), errno != 0) {
+        perror("pthread_join");
+        exit(1);
+    };
+
+    if ((sem_destroy(&notify_sem)) == -1) {
+        perror("sem_destroy");
+        exit(1);
+    };
 
     return 0;
 };

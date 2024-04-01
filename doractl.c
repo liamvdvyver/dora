@@ -104,20 +104,26 @@ int main(int argc, char **argv) {
 
     int sock;
     if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
-        printf("fuckd\n");
+        perror("socket");
         exit(1);
     };
 
     if ((connect(sock, (const struct sockaddr *)&remote, sizeof(remote))) ==
         -1) {
-        printf("fuckd\n");
+        perror("connect");
         exit(1);
     };
 
-    send(sock, (const void *)&req, sizeof(request), 0);
+    if ((send(sock, (const void *)&req, sizeof(request), 0)) == -1) {
+        perror("send");
+        exit(1);
+    };
 
     response resp;
-    recv(sock, &resp, sizeof(resp) - 1, 0);
+    if ((recv(sock, &resp, sizeof(resp) - 1, 0)) == -1) {
+        perror("recv");
+        exit(1);
+    };
 
     // Format query
     char output[OUTPUT_LEN];
