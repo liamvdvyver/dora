@@ -263,10 +263,9 @@ int main(int argc, char **argv) {
     pthread_create(&notifier_t, NULL, &notifier_loop, &args);
 
     // Terminate
-    pthread_detach(timer_t);
+    pthread_join(timer_t, NULL);
     pthread_join(notifier_t, NULL);
     pthread_join(listener_t, NULL);
-
     sem_destroy(&notify_sem);
 
     return 0;
