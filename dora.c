@@ -144,7 +144,7 @@ void *listener_loop(void *args) {
         while (len = recv(sock_connected, &req, sizeof(req), 0), len > 0) {
 
             // Handle control
-            handle_control(p_state, p_state_mutex, req.control, p_notify_sem);
+            handle_control(p_state, p_state_mutex, p_notify_sem, &req);
 
             // Respond
             response resp;

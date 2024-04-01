@@ -85,10 +85,32 @@ void strategy_next(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     };
 }
 
-void handle_control(state *p_state, pthread_mutex_t *p_mutex,
-                    enum control control, sem_t *p_sem) {
-    if (control != NO_CONTROL) {
-        switch (control) {
+void strategy_wrklen(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
+                     long minutes) {
+    int seconds = minutes * 60;
+    if (p_state->phase == WORKING) {
+        long offset = seconds - p_state->work_len;
+        p_state->remaining += offset;
+        p_state->finish += offset;
+    };
+    p_state->work_len = seconds;
+}
+
+void strategy_brklen(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
+                     long minutes) {
+    int seconds = minutes * 60;
+    if (p_state->phase == BREAKING) {
+        long offset = seconds - p_state->break_len;
+        p_state->remaining += offset;
+        p_state->finish += offset;
+    };
+    p_state->work_len = seconds;
+}
+
+void handle_control(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
+                    request *p_req) {
+    if (p_req->control != NO_CONTROL) {
+        switch (p_req->control) {
         case NO_CONTROL:
             break;
         case PAUSE:
@@ -116,8 +138,10 @@ void handle_control(state *p_state, pthread_mutex_t *p_mutex,
             strategy_brk(p_state, p_mutex, p_sem);
             break;
         case SET_BRK_LEN:
+            strategy_brklen(p_state, p_mutex, p_sem, p_req->minutes);
             break;
         case SET_WORK_LEN:
+            strategy_wrklen(p_state, p_mutex, p_sem, p_req->minutes);
             break;
         };
         sem_post(p_sem);
