@@ -26,12 +26,60 @@ state init_state() {
 // Timer tick period
 const int TIMER_TICK = 1;
 
-void notify(char *heading, char *body) {
+void notify_libnotify(char *heading, char *body) {
     notify_init("Dora");
     NotifyNotification *notify = notify_notification_new(heading, body, " ");
     notify_notification_show(notify, NULL);
     g_object_unref(G_OBJECT(notify));
     notify_uninit();
+}
+
+const int HEADING_LEN = 99;
+const int BODY_LEN = 99;
+
+void print_status(char *buf, int n, enum status status) {
+    switch (status) {
+    case RUNNING:
+        strncpy(buf, "running", n);
+        break;
+    case PAUSED:
+        strncpy(buf, "paused", n);
+        break;
+    case STOPPED:
+        strncpy(buf, "stopped", n);
+        break;
+    };
+};
+
+void print_phase(char *buf, int n, enum phase phase) {
+    switch (phase) {
+    case WORKING:
+        strncpy(buf, "working", n);
+        break;
+    case BREAKING:
+        strncpy(buf, "breaking", n);
+        break;
+    };
+};
+
+void get_notification(state *p_state, char *heading, char *body) {
+    // Set heading
+    strncpy(heading, "Dora", HEADING_LEN);
+
+    // Get status info
+    char status[BODY_LEN];
+    char phase[BODY_LEN];
+    memset(status, 0, BODY_LEN);
+    memset(phase, 0, BODY_LEN);
+    print_status(status, BODY_LEN - 1, p_state->status);
+    print_phase(phase, BODY_LEN - 1, p_state->phase);
+
+    // Set body
+    if (p_state->phase == STOPPED) {
+        strncpy(body, phase, BODY_LEN - 1);
+    } else {
+        snprintf(body, BODY_LEN - 1, "%s (%s)", phase, status);
+    };
 }
 
 // Parse args, assign state and cycle setup to passed pointers
@@ -165,7 +213,10 @@ void *notifier_loop(void *args) {
 
     while (p_state->status != STOPPED) {
         sem_wait(p_notify_sem);
-        notify("NOTIFY", "body");
+        char heading[HEADING_LEN];
+        char body[BODY_LEN];
+        get_notification(p_state, heading, body);
+        notify_libnotify(heading, body);
     };
 
     pthread_exit(0);
