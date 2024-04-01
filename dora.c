@@ -179,6 +179,7 @@ void *timer_loop(void *args) {
 
             // Start next phase
             strategy_next(p_state, p_state_mutex, p_notify_sem);
+            sem_post(p_notify_sem);
         };
     };
 
