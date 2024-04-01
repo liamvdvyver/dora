@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -g -O0 `pkg-config --cflags --libs libnotify`
+CFLAGS = `pkg-config --cflags --libs libnotify`
 default: all
 
 all: dora doractl
