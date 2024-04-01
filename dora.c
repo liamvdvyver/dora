@@ -15,6 +15,13 @@ const long WORK_LEN = 25 * 60;
 const long BREAK_LEN = 5 * 60;
 const cycles CYCLES = {WORK_LEN, BREAK_LEN};
 
+// Default state
+state init_state(cycles *cycles) {
+    struct state ret = {RUNNING, WORKING, cycles->workLen,
+                        time(NULL) + cycles->workLen};
+    return ret;
+};
+
 void notify(char *heading, char *body) {
     notify_init("Dora");
     NotifyNotification *notify = notify_notification_new(heading, body, " ");
@@ -40,7 +47,17 @@ void parse_args(int argc, char **argv, cycles *pcycles,
     };
 };
 
-void listener_loop(struct sockaddr_un *local) {
+struct listener_args_struct {
+    struct sockaddr_un *p_sockaddr;
+    pthread_mutex_t *p_mutex;
+};
+
+void *listener_loop(void *args) {
+
+    // Read in data
+    struct sockaddr_un *local;
+    local = ((struct listener_args_struct *)args)->p_sockaddr;
+    pthread_mutex_t *p_state_mutex = ((struct listener_args_struct *)args)->p_mutex;
 
     // Set up cycles/socket for run
     struct sockaddr_un remote;
@@ -108,22 +125,20 @@ int main(int argc, char **argv) {
     // Parse args
     parse_args(argc, argv, &active_cycles, &local);
 
-    listener_loop(&local);
-
     // Initialise state
-    long cur_time;
-    long seconds;
-    if (argc > 1) {
-        seconds = strtol(argv[1], NULL, 10);
-    } else {
-        return 1;
-    };
-    if (seconds == 0) {
-        return 1;
-    };
+    state active_state = init_state(&active_cycles);
 
+    // Launch listener thread
+    pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-    state state = {RUNNING, WORKING, seconds, time(NULL) + seconds};
+    struct listener_args_struct args;
+    args.p_sockaddr = &local;
+    args.p_mutex = &state_mutex;
+
+    pthread_t listener_t;
+    pthread_create(&listener_t, NULL, &listener_loop, &args);
+
+    pthread_join(listener_t, NULL);
 
     notify("DONE", "bottom text");
 
