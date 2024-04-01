@@ -181,6 +181,7 @@ int main(int argc, char **argv) {
     pthread_t timer_t;
     pthread_create(&timer_t, NULL, &timer_loop, &args);
 
+    pthread_detach(timer_t);
     pthread_join(listener_t, NULL);
 
     notify("DONE", "bottom text");
