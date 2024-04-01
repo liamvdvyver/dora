@@ -11,8 +11,12 @@
 #include <unistd.h>
 
 #include "ipc.h"
-#include "strategies.h"
 #include "printing.h"
+#include "strategies.h"
+
+// Usage
+const char *USAGE =
+    "Usage: dora [-w work length (min) | -b break length (min) | -s socket path]";
 
 // Default cycles
 const long WORK_LEN = 25 * 60;
@@ -64,16 +68,28 @@ void parse_args(int argc, char **argv, state *p_state,
                 struct sockaddr_un *p_sock) {
 
     char opt;
-    while ((opt = (getopt(argc, argv, "w:b:s:"))) != -1) {
+    while ((opt = (getopt(argc, argv, "w:b:s:h"))) != -1) {
         switch (opt) {
         case 'w':
             p_state->work_len = atol(optarg) * 60;
+            if (p_state->work_len <= 0) {
+                fprintf(stderr, "Positive argument to -w required\n");
+                exit(1);
+            };
             break;
         case 'b':
             p_state->break_len = atol(optarg) * 60;
+            if (p_state->work_len <= 0) {
+                fprintf(stderr, "Positive argument to -b required\n");
+                exit(1);
+            };
             break;
         case 's':
-            strcpy(p_sock->sun_path, optarg);
+            strncpy(p_sock->sun_path, optarg, sizeof(p_sock->sun_path));
+            break;
+        case 'h':
+            printf("%s\n", USAGE);
+            exit(0);
             break;
         };
     };
@@ -138,7 +154,8 @@ void *listener_loop(void *args) {
         // Accept request
         socklen_t len = sizeof(remote);
         int sock_connected;
-        if ((sock_connected = accept(sock, (struct sockaddr *)&remote, &len)) == -1) {
+        if ((sock_connected = accept(sock, (struct sockaddr *)&remote, &len)) ==
+            -1) {
             perror("accept");
             exit(1);
         };
@@ -246,19 +263,22 @@ int main(int argc, char **argv) {
 
     // Launch threads
     pthread_t listener_t;
-    if ((errno = pthread_create(&listener_t, NULL, &listener_loop, &args)), errno != 0) {
+    if ((errno = pthread_create(&listener_t, NULL, &listener_loop, &args)),
+        errno != 0) {
         perror("pthread_create");
         exit(1);
     };
 
     pthread_t timer_t;
-    if ((errno = pthread_create(&timer_t, NULL, &timer_loop, &args)), errno != 0) {
+    if ((errno = pthread_create(&timer_t, NULL, &timer_loop, &args)),
+        errno != 0) {
         perror("pthread_create");
         exit(1);
     };
 
     pthread_t notifier_t;
-    if ((errno = pthread_create(&notifier_t, NULL, &notifier_loop, &args)), errno != 0) {
+    if ((errno = pthread_create(&notifier_t, NULL, &notifier_loop, &args)),
+        errno != 0) {
         perror("pthread_create");
         exit(1);
     };

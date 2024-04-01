@@ -54,11 +54,20 @@ int main(int argc, char **argv) {
     // Query to be printed locally
     enum field query = NO_FIELD;
 
+    // Initialise address
+    struct sockaddr_un remote;
+    remote.sun_family = AF_UNIX;
+    strncpy(remote.sun_path, SOCK_PATH, sizeof(remote.sun_path) - 1);
+
+
     // Populate with input
     char opt;
-    while ((opt = (getopt(argc, argv, "q:c:t:h"))) != -1) {
+    while ((opt = (getopt(argc, argv, "s:q:c:t:h"))) != -1) {
         switch (opt) {
 
+        case 's':
+            strncpy(remote.sun_path, optarg, sizeof(remote.sun_path));
+            break;
             // Get usage
         case 'h':
             printf("%s\n", USAGE);
@@ -126,10 +135,6 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Positive argument to -t required\n");
         exit(1);
     };
-
-    struct sockaddr_un remote;
-    remote.sun_family = AF_UNIX;
-    strncpy(remote.sun_path, SOCK_PATH, sizeof(remote.sun_path) - 1);
 
     int sock;
     if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
