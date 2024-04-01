@@ -1,7 +1,9 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <iso646.h>
 #include <libnotify/notify.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -53,6 +55,7 @@ struct listener_args_struct {
     struct sockaddr_un *p_sockaddr;
     pthread_mutex_t *p_mutex;
     state *p_state;
+    sem_t *p_sem;
 };
 
 void *listener_loop(void *args) {
@@ -63,6 +66,7 @@ void *listener_loop(void *args) {
     state *p_state = ((struct listener_args_struct *)args)->p_state;
     pthread_mutex_t *p_state_mutex =
         ((struct listener_args_struct *)args)->p_mutex;
+    sem_t *p_notify_sem = ((struct listener_args_struct *)args)->p_sem;
 
     // Set up cycles/socket for run
     struct sockaddr_un remote;
@@ -110,7 +114,7 @@ void *listener_loop(void *args) {
         while (len = recv(sock_connected, &req, sizeof(req), 0), len > 0) {
 
             // Handle control
-            handle_control(p_state, p_state_mutex, req.control);
+            handle_control(p_state, p_state_mutex, req.control, p_notify_sem);
 
             // Respond
             response resp;
@@ -130,6 +134,7 @@ void *timer_loop(void *args) {
     state *p_state = ((struct listener_args_struct *)args)->p_state;
     pthread_mutex_t *p_state_mutex =
         ((struct listener_args_struct *)args)->p_mutex;
+    sem_t *p_notify_sem = ((struct listener_args_struct *)args)->p_sem;
 
     while (p_state->status != STOPPED) {
 
@@ -138,14 +143,29 @@ void *timer_loop(void *args) {
 
             // Do nothing
             sleep(TIMER_TICK);
-            strategy_tick(p_state, p_state_mutex);
+            strategy_tick(p_state, p_state_mutex, p_notify_sem);
 
         } else {
 
             // Start next phase
             printf("switching\n");
-            strategy_next(p_state, p_state_mutex);
+            strategy_next(p_state, p_state_mutex, p_notify_sem);
         };
+    };
+
+    pthread_exit(0);
+};
+
+void *notifier_loop(void *args) {
+
+    state *p_state = ((struct listener_args_struct *)args)->p_state;
+    pthread_mutex_t *p_state_mutex =
+        ((struct listener_args_struct *)args)->p_mutex;
+    sem_t *p_notify_sem = ((struct listener_args_struct *)args)->p_sem;
+
+    while (p_state->status != STOPPED) {
+        sem_wait(p_notify_sem);
+        notify("NOTIFY", "body");
     };
 
     pthread_exit(0);
@@ -163,28 +183,40 @@ int main(int argc, char **argv) {
     // Parse args
     parse_args(argc, argv, &active_cycles, &local);
 
-    // Launch listener thread
+    // Mutex to protect state struct
     pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+    // Semphore to notify on phase change
+    sem_t notify_sem;
+    sem_init(&notify_sem, 0, 1);
 
     // Initialise state
     state active_state = init_state();
-    strategy_work(&active_state, &state_mutex);
+    strategy_work(&active_state, &state_mutex, &notify_sem);
 
+    // Args for threads
     struct listener_args_struct args;
     args.p_sockaddr = &local;
     args.p_state = &active_state;
     args.p_mutex = &state_mutex;
+    args.p_sem = &notify_sem;
 
+    // Launch threads
     pthread_t listener_t;
     pthread_create(&listener_t, NULL, &listener_loop, &args);
 
     pthread_t timer_t;
     pthread_create(&timer_t, NULL, &timer_loop, &args);
 
+    pthread_t notifier_t;
+    pthread_create(&notifier_t, NULL, &notifier_loop, &args);
+
+    // Terminate
     pthread_detach(timer_t);
+    pthread_join(notifier_t, NULL);
     pthread_join(listener_t, NULL);
 
-    notify("DONE", "bottom text");
+    sem_destroy(&notify_sem);
 
     return 0;
 };
