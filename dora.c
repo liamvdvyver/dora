@@ -59,18 +59,22 @@ void get_notification(state *p_state, char *heading, char *body) {
 }
 
 // Parse args, assign state and cycle setup to passed pointers
-void parse_args(int argc, char **argv, cycles *pcycles,
+// TODO: safety
+void parse_args(int argc, char **argv, state *p_state,
                 struct sockaddr_un *p_sock) {
 
     char opt;
     while ((opt = (getopt(argc, argv, "w:b:s:"))) != -1) {
         switch (opt) {
         case 'w':
-            pcycles->workLen = strtol(optarg, NULL, 10) * 60;
+            p_state->work_len = atol(optarg) * 60;
+            break;
         case 'b':
-            pcycles->breakLen = strtol(optarg, NULL, 10) * 60;
+            p_state->break_len = atol(optarg) * 60;
+            break;
         case 's':
             strcpy(p_sock->sun_path, optarg);
+            break;
         };
     };
 };
@@ -218,9 +222,6 @@ int main(int argc, char **argv) {
 
     cycles active_cycles = {WORK_LEN, BREAK_LEN};
 
-    // Parse args
-    parse_args(argc, argv, &active_cycles, &local);
-
     // Mutex to protect state struct
     pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -233,6 +234,7 @@ int main(int argc, char **argv) {
 
     // Initialise state
     state active_state = init_state();
+    parse_args(argc, argv, &active_state, &local);
     strategy_work(&active_state, &state_mutex, &notify_sem);
 
     // Args for threads
