@@ -16,7 +16,7 @@ const long WORK_LEN = 25 * 60;
 const long BREAK_LEN = 5 * 60;
 
 // Default state
-state init_state(cycles *cycles) {
+state init_state() {
     struct state ret = {.work_len = WORK_LEN, .break_len = BREAK_LEN};
     return ret;
 };
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
     pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
 
     // Initialise state
-    state active_state = init_state(&active_cycles);
+    state active_state = init_state();
     strategy_work(&active_state, &state_mutex);
 
     struct listener_args_struct args;
