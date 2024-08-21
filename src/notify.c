@@ -44,7 +44,7 @@ void get_notification(state *p_state, char *heading, char *body) {
     };
 }
 
-void *notifier_loop(void *args) {
+void *notifier_loop(struct listener_args_struct *args) {
 
     state *p_state = ((struct listener_args_struct *)args)->p_state;
     pthread_mutex_t *p_state_mutex =

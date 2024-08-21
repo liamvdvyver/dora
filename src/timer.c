@@ -8,12 +8,12 @@
 const int TIMER_TICK = 1;
 
 // Run on a loop
-void *timer_loop(void *args) {
+void *timer_loop(struct listener_args_struct *args) {
 
-    state *p_state = ((struct listener_args_struct *)args)->p_state;
-    pthread_mutex_t *p_state_mutex =
-        ((struct listener_args_struct *)args)->p_mutex;
-    sem_t *p_notify_sem = ((struct listener_args_struct *)args)->p_sem;
+    // Unpack args
+    state *p_state = args->p_state;
+    pthread_mutex_t *p_state_mutex = args->p_mutex;
+    sem_t *p_notify_sem = args->p_sem;
 
     while (p_state->status != STOPPED) {
 

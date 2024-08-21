@@ -15,6 +15,6 @@ struct listener_args_struct {
     sem_t *p_sem;
 };
 
-void *listener_loop(void *args);
+void *listener_loop(struct listener_args_struct *args);
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-void *timer_loop(void *args);
+#include "listener.h"
+
+void *timer_loop(struct listener_args_struct *args);
 
 #endif

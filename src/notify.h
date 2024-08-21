@@ -1,6 +1,8 @@
 #ifndef NOTIFY_H
 #define NOTIFY_H
 
-void *notifier_loop(void *args);
+#include "listener.h"
+
+void *notifier_loop(struct listener_args_struct *args);
 
 #endif

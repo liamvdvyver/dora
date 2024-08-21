@@ -11,15 +11,13 @@
 #include "listener.h"
 #include "strategies.h"
 
-void *listener_loop(void *args) {
+void *listener_loop(struct listener_args_struct *args) {
 
-    // Read in data
-    struct sockaddr_un *local;
-    local = ((struct listener_args_struct *)args)->p_sockaddr;
-    state *p_state = ((struct listener_args_struct *)args)->p_state;
-    pthread_mutex_t *p_state_mutex =
-        ((struct listener_args_struct *)args)->p_mutex;
-    sem_t *p_notify_sem = ((struct listener_args_struct *)args)->p_sem;
+    // Unpack args
+    struct sockaddr_un *local = args->p_sockaddr;
+    state *p_state = args->p_state;
+    pthread_mutex_t *p_state_mutex = args->p_mutex;
+    sem_t *p_notify_sem = args->p_sem;
 
     // Set up cycles/socket for run
     struct sockaddr_un remote;
