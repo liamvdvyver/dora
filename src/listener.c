@@ -15,7 +15,7 @@ void *listener_loop(struct listener_args_struct *args) {
 
     // Unpack args
     struct sockaddr_un *local = args->p_sockaddr;
-    state *p_state = args->p_state;
+    struct state *p_state = args->p_state;
     pthread_mutex_t *p_state_mutex = args->p_mutex;
     sem_t *p_notify_sem = args->p_sem;
 
@@ -68,14 +68,14 @@ void *listener_loop(struct listener_args_struct *args) {
         };
 
         // Receive requests
-        request req;
+        struct request req;
         while (len = recv(sock_connected, &req, sizeof(req), 0), len > 0) {
 
             // Handle control
             handle_control(p_state, p_state_mutex, p_notify_sem, &req);
 
             // Respond
-            response resp;
+            struct response resp;
             memset(&resp, 0, sizeof(resp));
             resp.exit = 0;
             resp.state = *p_state;

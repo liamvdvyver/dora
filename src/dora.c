@@ -25,7 +25,7 @@ const long WORK_LEN = 25 * 60;
 const long BREAK_LEN = 5 * 60;
 
 // Default state
-state init_state() {
+struct state init_state() {
     struct state ret = {.work_len = WORK_LEN, .break_len = BREAK_LEN};
     return ret;
 };
@@ -33,7 +33,7 @@ state init_state() {
 
 // Parse args, assign state and cycle setup to passed pointers
 // TODO: safety
-void parse_args(int argc, char **argv, state *p_state,
+void parse_args(int argc, char **argv, struct state *p_state,
                 struct sockaddr_un *p_sock) {
 
     char opt;
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     local.sun_family = AF_UNIX;
     strncpy(local.sun_path, SOCK_PATH, sizeof(local.sun_path) - 1);
 
-    cycles active_cycles = {WORK_LEN, BREAK_LEN};
+    struct cycles active_cycles = {WORK_LEN, BREAK_LEN};
 
     // Mutex to protect state struct
     pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     };
 
     // Initialise state
-    state active_state = init_state();
+    struct state active_state = init_state();
     parse_args(argc, argv, &active_state, &local);
     strategy_work(&active_state, &state_mutex, &notify_sem);
 

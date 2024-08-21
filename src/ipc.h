@@ -3,15 +3,15 @@
 #ifndef IPC_H
 #define IPC_H
 
-typedef struct cycles {
+struct cycles {
     long workLen;
     long breakLen;
-} cycles;
+};
 
 enum status { RUNNING, PAUSED, STOPPED };
 enum phase { WORKING, BREAKING };
 
-typedef struct state {
+struct state{
     enum status status;
     enum phase phase;
     long remaining;
@@ -19,7 +19,7 @@ typedef struct state {
     long work_len;
     long break_len;
 
-} state;
+};
 
 enum field { NO_FIELD, STATUS, REMAINING, FINISH, PHASE };
 enum control {
@@ -34,21 +34,20 @@ enum control {
     BRK,
     SET_WORK_LEN,
     SET_BRK_LEN,
-    TICK
 };
 
-typedef struct request {
+struct request {
     enum control control;
     long minutes;
-} request;
+};
 
-typedef struct response {
+struct response {
     int exit;
-    state state;
-} response;
+    struct state state;
+};
 
 extern const char *SOCK_PATH;
-extern const request INIT_REQUEST;
+extern const struct request INIT_REQUEST;
 extern const int LEN_RESPONSE;
 
 #endif

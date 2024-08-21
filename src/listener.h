@@ -11,7 +11,7 @@
 struct listener_args_struct {
     struct sockaddr_un *p_sockaddr;
     pthread_mutex_t *p_mutex;
-    state *p_state;
+    struct state *p_state;
     sem_t *p_sem;
 };
 
