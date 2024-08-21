@@ -1,9 +1,7 @@
 // Standard definiitons for IPC
 
-#ifndef _ipc_h_included
-#define _ipc_h_included
-
-const char *SOCK_PATH = "/tmp/dora.socket";
+#ifndef IPC_H
+#define IPC_H
 
 typedef struct cycles {
     long workLen;
@@ -35,7 +33,8 @@ enum control {
     WORK,
     BRK,
     SET_WORK_LEN,
-    SET_BRK_LEN
+    SET_BRK_LEN,
+    TICK
 };
 
 typedef struct request {
@@ -43,13 +42,13 @@ typedef struct request {
     long minutes;
 } request;
 
-const request INIT_REQUEST = {.control = NO_CONTROL, .minutes = 0};
-
-const int LEN_RESPONSE = 99;
-
 typedef struct response {
     int exit;
     state state;
 } response;
+
+extern const char *SOCK_PATH;
+extern const request INIT_REQUEST;
+extern const int LEN_RESPONSE;
 
 #endif

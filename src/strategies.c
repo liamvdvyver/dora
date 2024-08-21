@@ -1,9 +1,7 @@
-// Strategies to update state
+#include "ipc.h"
 
 #include <pthread.h>
 #include <semaphore.h>
-
-#include "ipc.h"
 
 void strategy_tick(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     if (p_state->status == RUNNING) {
@@ -142,6 +140,9 @@ void handle_control(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
             break;
         case SET_WORK_LEN:
             strategy_wrklen(p_state, p_mutex, p_sem, p_req->minutes);
+            break;
+        case TICK:
+            strategy_tick(p_state, p_mutex, p_sem);
             break;
         };
         sem_post(p_sem);

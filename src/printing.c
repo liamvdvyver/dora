@@ -1,5 +1,5 @@
-#include "ipc.h"
 #include <string.h>
+#include "ipc.h"
 
 void print_status(char *buf, int n, enum status status) {
     switch (status) {
