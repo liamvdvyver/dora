@@ -24,7 +24,7 @@ void notify_libnotify(char *heading, char *body) {
     notify_uninit();
 }
 
-void get_notification(state *p_state, char *heading, char *body) {
+void get_notification(struct state *p_state, char *heading, char *body) {
     // Set heading
     strncpy(heading, "Dora", HEADING_LEN);
 
@@ -46,7 +46,7 @@ void get_notification(state *p_state, char *heading, char *body) {
 
 void *notifier_loop(struct listener_args_struct *args) {
 
-    state *p_state = ((struct listener_args_struct *)args)->p_state;
+    struct state *p_state = ((struct listener_args_struct *)args)->p_state;
     pthread_mutex_t *p_state_mutex =
         ((struct listener_args_struct *)args)->p_mutex;
     sem_t *p_notify_sem = ((struct listener_args_struct *)args)->p_sem;

@@ -19,7 +19,7 @@ const char *CONTROL_USAGE =
     "worklen (-t minutes) | breaklen (-t minutes)]";
 
 // Print response
-void get_output(state *p_state, enum field query, char *buf, int n) {
+void get_output(struct state *p_state, enum field query, char *buf, int n) {
 
     switch (query) {
     case NO_FIELD:
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     };
 
     // Initialise request
-    request req = INIT_REQUEST;
+    struct request req = INIT_REQUEST;
 
     // Query to be printed locally
     enum field query = NO_FIELD;
@@ -147,12 +147,12 @@ int main(int argc, char **argv) {
         exit(1);
     };
 
-    if ((send(sock, (const void *)&req, sizeof(request), 0)) == -1) {
+    if ((send(sock, (const void *)&req, sizeof(struct request), 0)) == -1) {
         perror("send");
         exit(1);
     };
 
-    response resp;
+    struct response resp;
     if ((recv(sock, &resp, sizeof(resp) - 1, 0)) == -1) {
         perror("recv");
         exit(1);

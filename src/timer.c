@@ -11,7 +11,7 @@ const int TIMER_TICK = 1;
 void *timer_loop(struct listener_args_struct *args) {
 
     // Unpack args
-    state *p_state = args->p_state;
+    struct state *p_state = args->p_state;
     pthread_mutex_t *p_state_mutex = args->p_mutex;
     sem_t *p_notify_sem = args->p_sem;
 

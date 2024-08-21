@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-void strategy_tick(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_tick(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     if (p_state->status == RUNNING) {
         pthread_mutex_lock(p_mutex);
         p_state->remaining = p_state->finish - time(NULL);
@@ -11,20 +11,20 @@ void strategy_tick(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     };
 };
 
-void strategy_pause(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_pause(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
     p_state->status = PAUSED;
     pthread_mutex_unlock(p_mutex);
 };
 
-void strategy_run(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_run(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
     p_state->status = RUNNING;
     p_state->finish = time(NULL) + p_state->remaining;
     pthread_mutex_unlock(p_mutex);
 };
 
-void strategy_toggle(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_toggle(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     switch (p_state->status) {
     case RUNNING:
         strategy_pause(p_state, p_mutex, p_sem);
@@ -37,13 +37,13 @@ void strategy_toggle(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     };
 };
 
-void strategy_stop(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_stop(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
     p_state->status = STOPPED;
     pthread_mutex_unlock(p_mutex);
 };
 
-void strategy_work(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_work(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
     p_state->phase = WORKING;
     p_state->status = RUNNING;
@@ -52,7 +52,7 @@ void strategy_work(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     pthread_mutex_unlock(p_mutex);
 }
 
-void strategy_brk(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_brk(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
     p_state->phase = BREAKING;
     p_state->status = RUNNING;
@@ -61,7 +61,7 @@ void strategy_brk(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     pthread_mutex_unlock(p_mutex);
 }
 
-void strategy_restart(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_restart(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     switch (p_state->phase) {
     case WORKING:
         strategy_work(p_state, p_mutex, p_sem);
@@ -72,7 +72,7 @@ void strategy_restart(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     };
 }
 
-void strategy_next(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_next(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     switch (p_state->phase) {
     case WORKING:
         strategy_brk(p_state, p_mutex, p_sem);
@@ -83,7 +83,7 @@ void strategy_next(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
     };
 }
 
-void strategy_wrklen(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
+void strategy_wrklen(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
                      long minutes) {
     int seconds = minutes * 60;
     if (p_state->phase == WORKING) {
@@ -94,7 +94,7 @@ void strategy_wrklen(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
     p_state->work_len = seconds;
 }
 
-void strategy_brklen(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
+void strategy_brklen(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
                      long minutes) {
     int seconds = minutes * 60;
     if (p_state->phase == BREAKING) {
@@ -105,8 +105,8 @@ void strategy_brklen(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
     p_state->work_len = seconds;
 }
 
-void handle_control(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
-                    request *p_req) {
+void handle_control(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
+                    struct request *p_req) {
     if (p_req->control != NO_CONTROL) {
         switch (p_req->control) {
         case NO_CONTROL:
@@ -140,9 +140,6 @@ void handle_control(state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
             break;
         case SET_WORK_LEN:
             strategy_wrklen(p_state, p_mutex, p_sem, p_req->minutes);
-            break;
-        case TICK:
-            strategy_tick(p_state, p_mutex, p_sem);
             break;
         };
         sem_post(p_sem);
