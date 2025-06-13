@@ -20,13 +20,10 @@
 const char *USAGE = "Usage: dora [-w work length (min) | -b break length (min) "
                     "| -s socket path]";
 
-// Default cycles
-const long WORK_LEN = 25 * 60;
-const long BREAK_LEN = 5 * 60;
-
 // Default state
 struct state init_state() {
-    struct state ret = {.work_len = WORK_LEN, .break_len = BREAK_LEN};
+    struct state ret;
+    init_settings(&ret.settings);
     return ret;
 };
 
@@ -40,15 +37,15 @@ void parse_args(int argc, char **argv, struct state *p_state,
     while ((opt = (getopt(argc, argv, "w:b:s:h"))) != -1) {
         switch (opt) {
         case 'w':
-            p_state->work_len = atol(optarg) * 60;
-            if (p_state->work_len <= 0) {
+            p_state->settings.default_pomodoro_duration = atol(optarg);
+            if (p_state->settings.default_pomodoro_duration <= 0) {
                 fprintf(stderr, "Positive argument to -w required\n");
                 exit(1);
             };
             break;
         case 'b':
-            p_state->break_len = atol(optarg) * 60;
-            if (p_state->work_len <= 0) {
+            p_state->settings.default_break_duration = atol(optarg);
+            if (p_state->settings.default_break_duration <= 0) {
                 fprintf(stderr, "Positive argument to -b required\n");
                 exit(1);
             };
@@ -70,8 +67,6 @@ int main(int argc, char **argv) {
     struct sockaddr_un local;
     local.sun_family = AF_UNIX;
     strncpy(local.sun_path, SOCK_PATH, sizeof(local.sun_path) - 1);
-
-    struct cycles active_cycles = {WORK_LEN, BREAK_LEN};
 
     // Mutex to protect state struct
     pthread_mutex_t state_mutex = PTHREAD_MUTEX_INITIALIZER;

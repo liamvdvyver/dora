@@ -47,7 +47,7 @@ void strategy_work(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem
     pthread_mutex_lock(p_mutex);
     p_state->phase = WORKING;
     p_state->status = RUNNING;
-    p_state->remaining = p_state->work_len;
+    p_state->remaining = p_state->settings.default_pomodoro_duration * 60;
     p_state->finish = time(NULL) + p_state->remaining;
     pthread_mutex_unlock(p_mutex);
 }
@@ -56,7 +56,7 @@ void strategy_brk(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem)
     pthread_mutex_lock(p_mutex);
     p_state->phase = BREAKING;
     p_state->status = RUNNING;
-    p_state->remaining = p_state->break_len;
+    p_state->remaining = p_state->settings.default_break_duration * 60;
     p_state->finish = time(NULL) + p_state->remaining;
     pthread_mutex_unlock(p_mutex);
 }
@@ -87,22 +87,22 @@ void strategy_wrklen(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_s
                      long minutes) {
     int seconds = minutes * 60;
     if (p_state->phase == WORKING) {
-        long offset = seconds - p_state->work_len;
+        long offset = seconds - p_state->settings.default_pomodoro_duration * 60;
         p_state->remaining += offset;
         p_state->finish += offset;
     };
-    p_state->work_len = seconds;
+    p_state->settings.default_pomodoro_duration = minutes;
 }
 
 void strategy_brklen(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
                      long minutes) {
     int seconds = minutes * 60;
     if (p_state->phase == BREAKING) {
-        long offset = seconds - p_state->break_len;
+        long offset = seconds - p_state->settings.default_break_duration * 60;
         p_state->remaining += offset;
         p_state->finish += offset;
     };
-    p_state->work_len = seconds;
+    p_state->settings.default_pomodoro_duration = minutes;
 }
 
 void handle_control(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
