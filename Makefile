@@ -42,3 +42,6 @@ install: $(BUILD)/dora $(BUILD)/doractl
 
 uninstall:
 	rm $(PREFIX)/bin/dora $(PREFIX)/bin/doractl
+
+$(BUILD)/test: format.c $(BUILD)/ipc.o
+	$(CC) $(CFLAGS) -g -o $@ $^
