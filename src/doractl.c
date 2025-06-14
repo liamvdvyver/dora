@@ -40,6 +40,56 @@ void get_output(struct state *p_state, enum field query, char *buf, int n) {
     };
 };
 
+// Parse a time argument of the following formats:
+//   X: minutes,
+//   Xm: mintues,
+//   Xs: seconds,
+//   XmYs: mintutes and seconds
+//
+//   return -1 if parse failed.
+sec_t parse_time(char *arg) {
+    sec_t seconds;
+    min_t minutes;
+
+    if (!*arg) {
+        return -1;
+    }
+
+    long fst_part = strtol(arg, &arg, 10);
+    if (!arg) {
+        return -1;
+    }
+
+    // One segment: minutes
+    if (!*arg) {
+        return 60 * fst_part;
+
+    // If marked as seconds: must be end of string
+    } else if (*arg == 's') {
+        if (*(arg + 1)) {
+            return -1;
+        }
+        return fst_part;
+    }
+    else if (*arg == 'm') {
+        if (!*(arg+1)) {
+            return 60 * fst_part;
+        }
+        minutes = fst_part;
+    }
+
+    // Next segment: seconds
+    seconds = strtol(++arg, &arg, 10);
+    if (!arg) {
+        return -1;
+    }
+    else if (*arg != 's') {
+        return -1;
+    }
+
+    return 60 * minutes + seconds;
+};
+
 int main(int argc, char **argv) {
 
     // Bad usage
