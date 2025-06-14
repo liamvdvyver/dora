@@ -80,7 +80,7 @@ void *listener_loop(struct listener_args_struct *args) {
             resp.exit = 0;
             resp.state = *p_state;
             send(sock_connected, &resp, sizeof(resp) - 1, 0);
-        };
+        close(sock_connected);
     };
 
     pthread_exit(0);
