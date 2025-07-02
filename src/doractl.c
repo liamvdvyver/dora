@@ -76,7 +76,7 @@ sec_t parse_time(char *arg) {
     }
 
     long fst_part = strtol(arg, &arg, 10);
-    if (!arg) {
+    if (!arg || fst_part < 0) {
         return -1;
     }
 
@@ -89,7 +89,7 @@ sec_t parse_time(char *arg) {
         if (*(arg + 1)) {
             return -1;
         }
-        return fst_part;
+        return fst_part > 60 ? -1 : fst_part;
     }
     else if (*arg == 'm') {
         if (!*(arg+1)) {
@@ -100,6 +100,9 @@ sec_t parse_time(char *arg) {
 
     // Next segment: seconds
     seconds = strtol(++arg, &arg, 10);
+    if (seconds > 60 || seconds < 0) {
+        return -1;
+    }
     if (!arg) {
         return -1;
     }
