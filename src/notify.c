@@ -37,7 +37,7 @@ void get_notification(struct state *p_state, char *heading, char *body) {
     print_phase(phase, BODY_LEN - 1, p_state->phase);
 
     // Set body
-    if (p_state->phase == STOPPED) {
+    if (p_state->status == DONE) {
         strncpy(body, phase, BODY_LEN - 1);
     } else {
         snprintf(body, BODY_LEN - 1, "%s (%s)", phase, status);
@@ -51,7 +51,7 @@ void *notifier_loop(struct listener_args_struct *args) {
         ((struct listener_args_struct *)args)->p_mutex;
     sem_t *p_notify_sem = ((struct listener_args_struct *)args)->p_sem;
 
-    while (p_state->status != STOPPED) {
+    while (p_state->status != DONE) {
 
         if ((sem_wait(p_notify_sem)) == -1) {
             perror("sem_wait");

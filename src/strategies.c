@@ -3,65 +3,86 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-void strategy_tick(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
-    if (p_state->status == RUNNING) {
+// When active, update the remaining time
+int strategy_tick(struct state *p_state, pthread_mutex_t *p_mutex,
+                  sem_t *p_sem) {
+    if (p_state->status == ACTIVE) {
         pthread_mutex_lock(p_mutex);
         p_state->remaining = p_state->finish - time(NULL);
         pthread_mutex_unlock(p_mutex);
-    };
-};
+        return 0;
+    }
+    return -1;
+}
 
-void strategy_pause(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_pause(struct state *p_state, pthread_mutex_t *p_mutex,
+                    sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
     p_state->status = PAUSED;
     pthread_mutex_unlock(p_mutex);
 };
 
-void strategy_run(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_run(struct state *p_state, pthread_mutex_t *p_mutex,
+                  sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
-    p_state->status = RUNNING;
+    p_state->status = ACTIVE;
     p_state->finish = time(NULL) + p_state->remaining;
     pthread_mutex_unlock(p_mutex);
 };
 
-void strategy_toggle(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+// Swtich between running and paused
+void strategy_toggle(struct state *p_state, pthread_mutex_t *p_mutex,
+                     sem_t *p_sem) {
     switch (p_state->status) {
-    case RUNNING:
+    case ACTIVE:
         strategy_pause(p_state, p_mutex, p_sem);
         break;
     case PAUSED:
         strategy_run(p_state, p_mutex, p_sem);
         break;
-    case STOPPED:
+    default:
         break;
     };
 };
 
-void strategy_stop(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+// Clear the current pomodoro, set state to INACTIVE
+void strategy_stop(struct state *p_state, pthread_mutex_t *p_mutex,
+                   sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
-    p_state->status = STOPPED;
+    p_state->status = INACTIVE;
     pthread_mutex_unlock(p_mutex);
 };
 
-void strategy_work(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+// Set state to done
+void stratgey_done(struct state *p_state, pthread_mutex_t *p_mutex,
+                   sem_t *p_sem) {
+    pthread_mutex_lock(p_mutex);
+    p_state->status = DONE;
+    pthread_mutex_unlock(p_mutex);
+}
+
+void strategy_work(struct state *p_state, pthread_mutex_t *p_mutex,
+                   sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
     p_state->phase = WORKING;
-    p_state->status = RUNNING;
+    p_state->status = ACTIVE;
     p_state->remaining = p_state->settings.default_pomodoro_duration * 60;
     p_state->finish = time(NULL) + p_state->remaining;
     pthread_mutex_unlock(p_mutex);
 }
 
-void strategy_brk(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_brk(struct state *p_state, pthread_mutex_t *p_mutex,
+                  sem_t *p_sem) {
     pthread_mutex_lock(p_mutex);
     p_state->phase = BREAKING;
-    p_state->status = RUNNING;
+    p_state->status = ACTIVE;
     p_state->remaining = p_state->settings.default_break_duration * 60;
     p_state->finish = time(NULL) + p_state->remaining;
     pthread_mutex_unlock(p_mutex);
 }
 
-void strategy_restart(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_restart(struct state *p_state, pthread_mutex_t *p_mutex,
+                      sem_t *p_sem) {
     switch (p_state->phase) {
     case WORKING:
         strategy_work(p_state, p_mutex, p_sem);
@@ -72,7 +93,8 @@ void strategy_restart(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_
     };
 }
 
-void strategy_next(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem) {
+void strategy_next(struct state *p_state, pthread_mutex_t *p_mutex,
+                   sem_t *p_sem) {
     switch (p_state->phase) {
     case WORKING:
         strategy_brk(p_state, p_mutex, p_sem);
@@ -83,19 +105,20 @@ void strategy_next(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem
     };
 }
 
-void strategy_wrklen(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
-                     long minutes) {
+void strategy_wrklen(struct state *p_state, pthread_mutex_t *p_mutex,
+                     sem_t *p_sem, long minutes) {
     int seconds = minutes * 60;
     if (p_state->phase == WORKING) {
-        long offset = seconds - p_state->settings.default_pomodoro_duration * 60;
+        long offset =
+            seconds - p_state->settings.default_pomodoro_duration * 60;
         p_state->remaining += offset;
         p_state->finish += offset;
     };
     p_state->settings.default_pomodoro_duration = minutes;
 }
 
-void strategy_brklen(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
-                     long minutes) {
+void strategy_brklen(struct state *p_state, pthread_mutex_t *p_mutex,
+                     sem_t *p_sem, long minutes) {
     int seconds = minutes * 60;
     if (p_state->phase == BREAKING) {
         long offset = seconds - p_state->settings.default_break_duration * 60;
@@ -105,8 +128,8 @@ void strategy_brklen(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_s
     p_state->settings.default_pomodoro_duration = minutes;
 }
 
-void handle_control(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_sem,
-                    struct request *p_req) {
+void handle_control(struct state *p_state, pthread_mutex_t *p_mutex,
+                    sem_t *p_sem, struct request *p_req) {
     if (p_req->control != NO_CONTROL) {
         switch (p_req->control) {
         case NO_CONTROL:
@@ -134,12 +157,6 @@ void handle_control(struct state *p_state, pthread_mutex_t *p_mutex, sem_t *p_se
             break;
         case BRK:
             strategy_brk(p_state, p_mutex, p_sem);
-            break;
-        case SET_BRK_LEN:
-            strategy_brklen(p_state, p_mutex, p_sem, p_req->minutes);
-            break;
-        case SET_WORK_LEN:
-            strategy_wrklen(p_state, p_mutex, p_sem, p_req->minutes);
             break;
         };
         sem_post(p_sem);

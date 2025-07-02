@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     // Initialise state
     struct state active_state = init_state();
     parse_args(argc, argv, &active_state, &local);
-    strategy_work(&active_state, &state_mutex, &notify_sem);
+    strategy_stop(&active_state, &state_mutex, &notify_sem);
 
     // Args for threads
     struct listener_args_struct args;

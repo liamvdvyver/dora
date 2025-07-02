@@ -3,23 +3,34 @@
 #ifndef IPC_H
 #define IPC_H
 
-enum status { RUNNING, PAUSED, STOPPED };
+// As per protocol, with additional paused state
+enum status {
+    INACTIVE, // No active pomodoro
+    ACTIVE,   // Active pomodoro running
+    PAUSED,   // Active pomodor but paused
+    DONE,     // Pomodoro time finished
+    DEAD      // Daemon shutting down
+};
+
 enum phase { WORKING, BREAKING };
+
+typedef long min_t;
+typedef long sec_t;
 
 // As per protocol
 struct pomodoro {
-    long start;
-    long duration;
-    char *description;
-    char **tags;
+    long start;        // Time started, in unix time
+    sec_t duration;    // Duration in seconds
+    char *description; // Nullable description
+    char **tags;       // Nullable tags
 };
 
 // As per protocol
 struct settings {
-    int daily_goal;
-    long default_break_duration;
-    long default_pomodoro_duration;
-    char **default_tags;
+    int daily_goal;                  // How many pomodoros to aim for
+    min_t default_break_duration;    // In minutes
+    min_t default_pomodoro_duration; // In minutes
+    char **default_tags;             //
 };
 
 struct state {
@@ -27,8 +38,8 @@ struct state {
     struct settings settings;
     enum status status;
     enum phase phase;
-    long remaining;
-    long finish;
+    sec_t remaining;
+    sec_t finish;
 };
 
 // Reqs and Resps
@@ -44,16 +55,31 @@ enum control {
     NEXT,
     WORK,
     BRK,
-    SET_WORK_LEN,
-    SET_BRK_LEN,
 };
+
+typedef enum {
+    _START,
+    _AMEND,
+    _STATUS, // Send continuously if blocking
+    _CLEAR,
+    _FINISH,
+    _BREAK,
+    _REPEAT,
+    _PAUSE,
+    _RESUME,
+} control_t;
 
 void init_settings(struct settings *settings);
 
 struct request {
     enum control control;
-    long minutes;
+    min_t minutes;
 };
+
+typedef struct {
+    control_t control;
+    struct pomodoro *pomo;
+} req_t;
 
 struct response {
     int exit;

@@ -1,9 +1,11 @@
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #include "ipc.h"
 #include "printing.h"
@@ -17,6 +19,24 @@ const char *QUERY_USAGE =
 const char *CONTROL_USAGE =
     "Usage: doractl -c [pause | run | stop | restart | next | work | break | "
     "worklen (-t minutes) | breaklen (-t minutes)]";
+
+const char *USAGE_ = "Usage: doractl [start | amend | status | clear | finish | break | repeat ]";
+const char *START_USAGE_ = "Usage: doractl start [ \"<description>\" | --tags <tags> | --ago <time> | --duration <time> ]";
+const char *AMEND_USAGE_ = "Usage: doractl amend [ \"<description>\" | --tags <tags> | --ago <time> | --duration <time> ]";
+const char *STATUS_USAGE_ = "Not implemented";
+const char *CLEAR_USAGE_ = "Usage: doractl clear";
+const char *FINISH_USAGE_ = "Usage: doractl finish";
+const char *BREAK_USAGE_ = "Usage: doractl break [ --ago <time> | --duration <time> ]";
+const char *REPEAT_USAGE_ = "Usage: doractl repeat";
+
+// Options
+struct option start_opts[] = {
+    {"tags", required_argument, 0, 't'},
+    {"ago", required_argument, 0, 'a'},
+    {"duration", required_argument, 0, 'd'},
+    {0, 0, 0},
+};
+const char *start_opt_string = "tad:";
 
 // Print response
 void get_output(struct state *p_state, enum field query, char *buf, int n) {
@@ -90,6 +110,19 @@ sec_t parse_time(char *arg) {
     return 60 * minutes + seconds;
 };
 
+// Return -1 on fail
+// Write requested pomodoro to *pomo
+int handle_start(int argc, char **argv, struct pomodoro *pomo) {
+    char opt;
+    while ((opt = getopt_long(argc, argv, start_opt_string, start_opts, 0)) != -1) {
+        switch (opt) {
+            case 't':
+                pomo->tags;
+        }
+    }
+
+};
+
 int main(int argc, char **argv) {
 
     // Bad usage
@@ -109,8 +142,13 @@ int main(int argc, char **argv) {
     remote.sun_family = AF_UNIX;
     strncpy(remote.sun_path, SOCK_PATH, sizeof(remote.sun_path) - 1);
 
-    // Populate with input
+    // Parse options new method
     char opt;
+    // printf("%s\n", argv[optind]);
+    // printf("%s\n", argv[optind + 1]);
+    // return EXIT_SUCCESS;
+
+    // Populate with input
     while ((opt = (getopt(argc, argv, "s:q:c:t:h"))) != -1) {
         switch (opt) {
 
@@ -159,10 +197,10 @@ int main(int argc, char **argv) {
                 req.control = WORK;
             } else if (strcmp(optarg, "break") == 0) {
                 req.control = BRK;
-            } else if (strcmp(optarg, "worklen") == 0) {
-                req.control = SET_WORK_LEN;
-            } else if (strcmp(optarg, "breaklen") == 0) {
-                req.control = SET_BRK_LEN;
+            // } else if (strcmp(optarg, "worklen") == 0) {
+            //     req.control = SET_WORK_LEN;
+            // } else if (strcmp(optarg, "breaklen") == 0) {
+            //     req.control = SET_BRK_LEN;
             } else {
                 errno = EINVAL;
                 perror("-c");
@@ -179,11 +217,11 @@ int main(int argc, char **argv) {
     };
 
     // Check minutes provided if needed
-    if (req.minutes == 0 &&
-        (req.control == SET_WORK_LEN || req.control == SET_BRK_LEN)) {
-        fprintf(stderr, "Positive argument to -t required\n");
-        exit(1);
-    };
+    // if (req.minutes == 0 &&
+    //     (req.control == SET_WORK_LEN || req.control == SET_BRK_LEN)) {
+    //     fprintf(stderr, "Positive argument to -t required\n");
+    //     exit(1);
+    // };
 
     int sock;
     if ((sock = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {

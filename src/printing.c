@@ -3,14 +3,17 @@
 
 void print_status(char *buf, int n, enum status status) {
     switch (status) {
-    case RUNNING:
+    case ACTIVE:
         strncpy(buf, "running", n);
         break;
     case PAUSED:
         strncpy(buf, "paused", n);
         break;
-    case STOPPED:
-        strncpy(buf, "stopped", n);
+    case DONE:
+        strncpy(buf, "done", n);
+        break;
+    case INACTIVE:
+        strncpy(buf, "inactive", n);
         break;
     };
 };

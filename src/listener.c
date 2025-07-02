@@ -11,7 +11,7 @@
 #include "listener.h"
 #include "strategies.h"
 
-void *listener_loop(struct listener_args_struct *args) {
+void listener_loop(struct listener_args_struct *args) {
 
     // Unpack args
     struct sockaddr_un *local = args->p_sockaddr;
@@ -56,7 +56,7 @@ void *listener_loop(struct listener_args_struct *args) {
 
     printf("Listening\n");
 
-    while (p_state->status != STOPPED) {
+    while (p_state->status != DONE) {
 
         // Accept request
         socklen_t len = sizeof(remote);
@@ -80,8 +80,10 @@ void *listener_loop(struct listener_args_struct *args) {
             resp.exit = 0;
             resp.state = *p_state;
             send(sock_connected, &resp, sizeof(resp) - 1, 0);
-        close(sock_connected);
-    };
+        };
 
+        close(sock_connected);
+
+    }
     pthread_exit(0);
-};
+}

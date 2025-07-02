@@ -15,7 +15,7 @@ void *timer_loop(struct listener_args_struct *args) {
     pthread_mutex_t *p_state_mutex = args->p_mutex;
     sem_t *p_notify_sem = args->p_sem;
 
-    while (p_state->status != STOPPED) {
+    while (p_state->status != DEAD) {
 
         time_t cur_time = time(NULL);
         if (cur_time < p_state->finish) {
